@@ -92,17 +92,30 @@ If non-nil `xclip-program' is ignored.")
   (or
    (and xclip-use-pbcopy&paste 'pbpaste)
    (and (eq system-type 'cygwin) (executable-find "getclip") 'getclip)
+   ;; Wayland takes priority over X11 when WAYLAND_DISPLAY is set, regardless
+   ;; of which X11 tools happen to be installed alongside wl-clipboard.
+   (and (getenv "WAYLAND_DISPLAY") (executable-find "wl-copy") 'wl-copy)
    (and (executable-find "xclip") 'xclip)
    (and (executable-find "xsel") 'xsel)
-   (and (executable-find "wl-copy") 'wl-copy) ;github.com/bugaevc/wl-clipboard
    (and (executable-find "termux-clipboard-get") 'termux-clipboard-get)
    (and (fboundp 'x-create-frame) (getenv "DISPLAY") 'emacs)
    (and (eq system-type 'gnu/linux) ;FIXME: How do we detect WSL?
         (executable-find "powershell.exe") 'powershell)
    'xclip)
   "Method to use to access the GUI's clipboard.
-Can be one of `pbpaste' for MacOS, `xclip' or `xsel' for X11,
-and `getclip' under Cygwin, or `emacs' to use Emacs's GUI code for that."
+Auto-detected from environment by default:
+wl-copy takes priority over xclip or xsel when
+environment variable WAYLAND_DISPLAY is set.
+
+Possible values:
+- `wl-copy'  Wayland, via wl-copy/wl-paste from wl-clipboard
+- `xclip'    X11, via the xclip binary
+- `xsel'     X11, via the xsel binary
+- `emacs'    X11, via Emacs built-in GUI selection code
+- `pbpaste'  macOS, via pbcopy/pbpaste
+- `getclip'  Cygwin, via getclip/putclip
+- `termux-clipboard-get'  Termux (Android)
+- `powershell'  WSL, via clip.exe/powershell.exe"
   :type '(choice
           (const :tag "MacOS: pbcopy/pbpaste" pbpaste)
           (const :tag "Cygwin: getclip/putclip" getclip)
